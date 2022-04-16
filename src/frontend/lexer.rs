@@ -34,6 +34,9 @@ impl Lexer {
     
 
     pub fn print(&self) {
+        for token in &self.tokens {
+            println!("{}: {}", token.token_type, token.lexeme);
+        }
         println!("source:\n{}\n\nstart: {}\ncurrent: {}\nline: {}\nhad_error: {}", self.source, self.start, self.current, self.line, self.had_error);
     }
 

@@ -75,11 +75,23 @@ impl Parser {
     }
 
     fn parse_unary_expr(&mut self) -> Node {
+        if self.match_next(TokenType::Minus) {
+            let mut op = Op::Neg;
+            match self.prev().token_type {
+                TokenType::Minus => op = Op::Neg,
+                _ => {}
+            }
+
+            let right = self.parse_primary_expr();
+
+            return Node::unary(op, right);
+        }
         self.parse_primary_expr()
     }
 
     fn parse_primary_expr(&mut self) -> Node {
         //self.advance();
+        self.match_next(TokenType::Newline);
         if self.match_next(TokenType::Integer) {
             return Node::standalone(&self.prev().lexeme);
         } else if self.match_next(TokenType::Double) {
@@ -87,7 +99,7 @@ impl Parser {
         } else if self.match_next(TokenType::String) {
             return Node::standalone(&self.prev().lexeme);
         }
-        return Node::standalone("x");
+        return Node::standalone("temporary");
     }
 
     fn advance(&mut self) {
