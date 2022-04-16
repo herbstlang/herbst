@@ -40,21 +40,38 @@ impl Parser {
     }
 
     fn parse_term_expr(&mut self) -> Node {
-        let left = self.parse_factor_expr();
-        if self.match_next(TokenType::Plus) {
+        let mut expr = self.parse_factor_expr();
+        while self.match_next(TokenType::Plus) || self.match_next(TokenType::Minus) {
+            let mut op = Op::Add;
+            match self.prev().token_type {
+                TokenType::Plus => op = Op::Add,
+                TokenType::Minus => op = Op::Sub,
+                _ => {}
+            }
+
             let right = self.parse_factor_expr();
-            return Node::binary(Op::Add, left, right);
+
+            expr = Node::binary(op, expr, right);
         }
-        left
+        expr
     }
 
     fn parse_factor_expr(&mut self) -> Node {
-        let left = self.parse_unary_expr();
-        if self.match_next(TokenType::Star) {
+        let mut expr = self.parse_unary_expr();
+        while self.match_next(TokenType::Star) || self.match_next(TokenType::Slash) || self.match_next(TokenType::Percent) {
+            let mut op = Op::Add;
+            match self.prev().token_type {
+                TokenType::Star => op = Op::Mul,
+                TokenType::Slash => op = Op::Div,
+                TokenType::Percent => op = Op::Mod,
+                _ => {}
+            }
+
             let right = self.parse_unary_expr();
-            return Node::binary(Op::Mul, left, right);
+
+            expr = Node::binary(op, expr, right);
         }
-        left
+        expr
     }
 
     fn parse_unary_expr(&mut self) -> Node {
@@ -63,20 +80,14 @@ impl Parser {
 
     fn parse_primary_expr(&mut self) -> Node {
         //self.advance();
-        match self.peek(0).token_type {
-            TokenType::Integer => {
-                self.advance();
-                return Node::standalone(&self.peek(0).lexeme)
-            },
-            TokenType::Identifier => {
-                self.advance();
-                return Node::standalone(&self.peek(0).lexeme)
-            }
-            _ => {
-                self.advance();
-                return Node::standalone("x")
-            }
+        if self.match_next(TokenType::Integer) {
+            return Node::standalone(&self.prev().lexeme);
+        } else if self.match_next(TokenType::Double) {
+            return Node::standalone(&self.prev().lexeme);
+        } else if self.match_next(TokenType::String) {
+            return Node::standalone(&self.prev().lexeme);
         }
+        return Node::standalone("x");
     }
 
     fn advance(&mut self) {
@@ -85,6 +96,10 @@ impl Parser {
 
     fn peek(&self, n: usize) -> &Token {
         &self.tokens[self.current + n]
+    }
+
+    fn prev(&self) -> &Token {
+        &self.tokens[self.current - 1]
     }
 
     fn match_next(&mut self, ttype: TokenType) -> bool {
